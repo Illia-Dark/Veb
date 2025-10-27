@@ -1,0 +1,110 @@
+:root {
+  --main-color: #007bff;
+  --secondary-color: #333;
+  --bg-color: #f9f9f9;
+  --padding: 1rem;
+  --max-width: 1200px;
+  --text-color: #222;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: var(--bg-color);
+  color: var(--text-color);
+}
+
+header {
+  background: var(--main-color);
+  color: white;
+  text-align: center;
+  padding: var(--padding);
+}
+
+nav ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+nav a {
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.container {
+  width: 90%;
+  max-width: var(--max-width);
+  margin: 20px auto;
+}
+
+.content {
+  display: flex;
+  gap: 20px;
+}
+
+.main {
+  flex: 3;
+}
+
+.sidebar {
+  flex: 1;
+  background: #fff;
+  padding: var(--padding);
+  border: 1px solid #ccc;
+}
+
+footer {
+  background: var(--secondary-color);
+  color: white;
+  text-align: center;
+  padding: var(--padding);
+}
+
+/* --- Адаптивність --- */
+
+/* 📱 Мобільні пристрої */
+@media (max-width: 480px) {
+  header h1 {
+    font-size: 1.4rem;
+  }
+
+  nav ul {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .content {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    order: -1;
+  }
+}
+
+/* 💻 Планшети */
+@media (max-width: 768px) {
+  .content {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    background: #eef;
+  }
+}
+
+/* 🖥️ Великі екрани */
+@media (min-width: 1200px) {
+  .container {
+    max-width: var(--max-width);
+  }
+}
