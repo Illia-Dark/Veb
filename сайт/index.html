@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Породи котів — Каталог</title>
+  <style>
+    :root{--accent:#6b46c1;--bg:#f7f7fb;--card:#ffffff;--muted:#6b7280}
+    *{box-sizing:border-box}
+    body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; margin:0; background:var(--bg); color:#111}
+    header{background:linear-gradient(90deg,#7c3aed22,transparent); padding:28px 16px; border-bottom:1px solid #eee}
+    .container{max-width:1100px;margin:0 auto;padding:24px}
+    h1{margin:0;font-size:28px;color:var(--accent)}
+    p.lead{margin:6px 0 0;color:var(--muted)}
+    .controls{display:flex;gap:12px;margin:18px 0;flex-wrap:wrap}
+    input[type=search]{padding:10px 12px;border-radius:10px;border:1px solid #ddd;min-width:220px}
+    select{padding:10px;border-radius:10px;border:1px solid #ddd}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+
+    .card{background:var(--card);border-radius:12px;overflow:hidden;box-shadow:0 6px 18px rgba(16,24,40,0.06);cursor:pointer;transition:transform .15s;display:flex;flex-direction:column}
+    .card:hover{transform:translateY(-6px)}
+    .card img{width:100%;height:160px;object-fit:cover;display:block}
+    .card .meta{padding:12px}
+    .breed-name{font-weight:600;margin:0 0 6px}
+    .small{font-size:13px;color:var(--muted)}
+
+    footer{padding:20px 0;text-align:center;color:var(--muted);font-size:14px}
+
+    /* modal */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(2,6,23,0.5);display:none;align-items:center;justify-content:center;padding:20px}
+    .modal{background:var(--card);max-width:920px;width:100%;border-radius:12px;overflow:hidden;box-shadow:0 20px 50px rgba(2,6,23,0.4);display:flex;flex-direction:row}
+    .modal .left{flex:1;min-width:320px}
+    .modal .left img{width:100%;height:100%;object-fit:cover}
+    .modal .right{flex:1;padding:20px}
+    .close-btn{background:#eee;border:0;padding:8px 12px;border-radius:8px;cursor:pointer}
+    .tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    .tag{background:#f1effa;color:var(--accent);padding:6px 10px;border-radius:999px;font-weight:600;font-size:13px}
+
+    @media (max-width:880px){
+      .modal{flex-direction:column}
+      .modal .left{height:220px}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>Породи котів</h1>
+      <!-- ЗМІНА: прибрано згадку про можливість додавання власних фото у підзаголовку -->
+      <p class="lead">Коротка енциклопедія найпопулярніших порід — характеристика, характер, догляд та фото.</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="controls">
+      <input id="search" type="search" placeholder="Пошук породи (наприклад: Мейн-кун)" />
+      <select id="filter">
+        <option value="all">Всі породи</option>
+        <option value="longhair">Довгошерсті</option>
+        <option value="shorthair">Короткошерсті</option>
+        <option value="hypo">Гіпоалергенні / майже</option>
+      </select>
+      <button id="reset">Скинути</button>
+    </div>
+
+    <section class="grid" id="grid">
+      <!-- cards вставляються скриптом -->
+    </section>
+
+    <footer>
+      <!-- ЗМІНА: рядок 'Потрібна допомога або хочеш додати породу? Напиши мені — я додам.' видалено -->
+      © 2025
+    </footer>
+  </main>
+
+  <!-- modal -->
+  <div id="backdrop" class="modal-backdrop" role="dialog" aria-hidden="true">
+    <div class="modal" role="document">
+      <div class="left"><img id="modal-img" src="" alt="Фотографія породи"/></div>
+      <div class="right">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h2 id="modal-title">Назва</h2>
+          <button class="close-btn" id="close">Закрити</button>
+        </div>
+        <p id="modal-desc" style="margin-top:8px;color:var(--muted)"></p>
+        <div class="tags" id="modal-tags"></div>
+
+        <h3 style="margin-top:14px">Характеристики</h3>
+        <ul id="modal-list"></ul>
+
+        <!-- ЗМІНА: повністю видалено UI для завантаження/видалення фото і прев'ю -->
+        <!-- Раніше тут був блок .uploader з <input id="imgUpload">, кнопкою Видалити та прев'ю.
+             Тепер блок відсутній — немає можливості завантажити/замінити/видалити фото через інтерфейс. -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // breeds data — використовується тільки поле img (локальні шляхи або зовнішні URL)
+  const breeds = [
+  {
+    id: 'maine-coon',
+    name: 'Мейн-кун',
+    short: 'Великий, доброзичливий, довгошерстий «джентльмен»',
+    type: 'longhair',
+    hypo: false,
+    img: 'images/maine-coon.webp',
+    desc: 'Мейн-кун — одна з найбільших пород котів, відома своїм дружнім характером, розвиненим інтелектом і довгою шерстю. Підходить для сімей, добре ладнає з дітьми і собаками.',
+    facts: [
+      'Вага: до 9–11 кг',
+      'Шерсть: довга, потребує чищення 2–3 рази на тиждень',
+      'Характер: доброзичливий, грайливий'
+    ]
+  },
+  {
+    id: 'siamese',
+    name: 'Сіамська',
+    short: 'Голосиста, розумна короткошерста порода',
+    type: 'shorthair',
+    hypo: false,
+    img: 'images/siamese.webp',
+    desc: 'Сіамські коти відомі своєю комунікабельністю — вони люблять бути центром уваги, дуже розумні й енергійні.',
+    facts: [
+      'Вага: 3–6 кг',
+      'Шерсть: коротка, мінімальний догляд',
+      'Характер: голосисті, привязливі'
+    ]
+  },
+  {
+    id: 'persian',
+    name: 'Перська',
+    short: 'Миролюбна, з розкішною довгою шерстю',
+    type: 'longhair',
+    hypo: false,
+    img: 'images/persian.webp',
+    desc: 'Перські коти — спокійні та ніжні. Потребують регулярного догляду за шерстю та інколи спеціального догляду за очима через особливу мордочку.',
+    facts: [
+      'Вага: 3–6 кг',
+      'Шерсть: довга, щоденне вичісування',
+      'Характер: спокійний, лагідний'
+    ]
+  },
+  {
+    id: 'bengal',
+    name: 'Бенгальська',
+    short: 'Активна, зовні нагадує дикого кота',
+    type: 'shorthair',
+    hypo: false,
+    img: 'images/bengal.webp',
+    desc: 'Бенгальська порода — енергійні та розумні коти з цікавим забарвленням. Потребують багато ігор та стимуляції.',
+    facts: [
+      'Вага: 4–7 кг',
+      'Шерсть: коротка, глянцева',
+      'Характер: активний, допитливий'
+    ]
+  },
+  {
+    id: 'scottish',
+    name: 'Шотландська висловуха',
+    short: 'Мило складені вуха, лагідна натура',
+    type: 'shorthair',
+    hypo: false,
+    img: 'images/scottish.webp',
+    desc: 'Відомі своїми загнутими вушками; за характером зазвичай спокійні та доброзичливі. Слід звертати увагу на суглоби у деяких ліній.',
+    facts: [
+      'Вага: 3–6 кг',
+      'Шерсть: коротка або напівдовга',
+      'Характер: спокійний, дружній'
+    ]
+  },
+  {
+    id: 'sphynx',
+    name: 'Сфінкс',
+    short: 'Майже безшерстий, теплий та енергійний',
+    type: 'shorthair',
+    hypo: true,
+    img: 'images/sphynx.webp',
+    desc: 'Сфінкси практично без шерсті — підходять для людей з легкою алергією, потребують догляду за шкірою і захисту від холоду.',
+    facts: [
+      'Вага: 3–6 кг',
+      'Шерсть: майже відсутня',
+      'Характер: товариський, теплий до людей'
+    ]
+  },
+  {
+    id: 'ragdoll',
+    name: 'Рагдолл',
+    short: 'Великий ніжний як «м’яка іграшка»',
+    type: 'longhair',
+    hypo: false,
+    img: 'images/ragdoll.webp',
+    desc: 'Рагдолли славляться своєю неконфліктністю: вони зазвичай розслаблені і люблять, коли їх беруть на руки.',
+    facts: [
+      'Вага: 4–9 кг',
+      'Шерсть: напівдовга, потребує чищення',
+      'Характер: дружній, спокійний'
+    ]
+  },
+  {
+    id: 'british',
+    name: 'Британська короткошерста',
+    short: 'Круглолиця, спокійна та незалежна',
+    type: 'shorthair',
+    hypo: false,
+    img: 'images/british.webp',
+    desc: 'Класична британська короткошерста — стоїть на варті гарного самопочуття та має густу плюшеву шерсть.',
+    facts: [
+      'Вага: 4–8 кг',
+      'Шерсть: коротка, щільна',
+      'Характер: спокійний, незалежний'
+    ]
+  }
+];
+
+    const grid = document.getElementById('grid');
+    const search = document.getElementById('search');
+    const filter = document.getElementById('filter');
+    const reset = document.getElementById('reset');
+
+    function renderList(list){
+      grid.innerHTML = '';
+      list.forEach(b=>{
+        const card = document.createElement('article');
+        card.className='card';
+        // ЗМІНА: використовуємо тільки стандартне поле b.img (без localStorage/user overrides)
+        const imgSrc = b.img; // <-- тут я прибрав перевірку userImageFor(b.id)
+        card.innerHTML = `
+          <img loading="lazy" src="${imgSrc}" alt="${b.name}" />
+          <div class="meta">
+            <h3 class="breed-name">${b.name}</h3>
+            <p class="small">${b.short}</p>
+          </div>`;
+        card.addEventListener('click',()=>openModal(b));
+        grid.appendChild(card);
+      })
+    }
+
+    let currentBreed = null;
+    function openModal(b){
+      currentBreed = b;
+      const backdrop = document.getElementById('backdrop');
+      const imgEl = document.getElementById('modal-img');
+      // ЗМІНА: модалка показує тільки стандартне фото із b.img (без можливості заміни)
+      imgEl.src = b.img;
+      document.getElementById('modal-title').textContent = b.name;
+      document.getElementById('modal-desc').textContent = b.desc;
+      const tags = document.getElementById('modal-tags'); tags.innerHTML='';
+      if(b.type) tags.insertAdjacentHTML('beforeend',`<div class="tag">${b.type=='longhair'? 'Довгошерста':'Короткошерста'}</div>`);
+      if(b.hypo) tags.insertAdjacentHTML('beforeend',`<div class="tag">Гіпоалергенна</div>`);
+      const list = document.getElementById('modal-list'); list.innerHTML='';
+      b.facts.forEach(f=>{const li=document.createElement('li'); li.textContent=f; list.appendChild(li);});
+
+      backdrop.style.display='flex'; backdrop.setAttribute('aria-hidden','false');
+    }
+
+    document.getElementById('close').addEventListener('click',()=>{const backdrop = document.getElementById('backdrop'); backdrop.style.display='none'; backdrop.setAttribute('aria-hidden','true'); currentBreed=null;});
+    document.getElementById('backdrop').addEventListener('click',(e)=>{ if(e.target.id==='backdrop'){e.currentTarget.style.display='none'; currentBreed=null;} });
+
+    function applyFilters(){
+      const q = search.value.trim().toLowerCase();
+      const f = filter.value;
+      const filtered = breeds.filter(b=>{
+        if(f!=='all'){
+          if(f==='longhair' && b.type!=='longhair') return false;
+          if(f==='shorthair' && b.type!=='shorthair') return false;
+          if(f==='hypo' && !b.hypo) return false;
+        }
+        if(!q) return true;
+        return b.name.toLowerCase().includes(q) || b.short.toLowerCase().includes(q) || b.desc.toLowerCase().includes(q);
+      });
+      renderList(filtered);
+    }
+
+    search.addEventListener('input',applyFilters);
+    filter.addEventListener('change',applyFilters);
+    reset.addEventListener('click',()=>{search.value='';filter.value='all';applyFilters();});
+
+    // initial
+    renderList(breeds);
+
+    // ЗМІНА: видалені функції та обробники, що працювали з localStorage і input#imgUpload
+    // (раніше були userImageFor, setUserImage, removeUserImage, і обробник input.addEventListener('change', ...))
+    // Тепер немає можливості додавати, замінювати чи видаляти фото з інтерфейсу.
+  </script>
+</body>
+</html>
